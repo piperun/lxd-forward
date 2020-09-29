@@ -102,7 +102,8 @@ function forward() {
   test -n "$c_port" || error "Container port not specified"
   test -n "$h_port" || h_port=$c_port
 
-  iptables -t nat -A PREROUTING -p $protocol --dport "$h_port" -j DNAT --to-destination "${ip}:${c_port}"
+  # only sudo when needing to use iptables so we won't access sudo (root) lxd by "sudo ./lxd-forward"
+  sudo iptables -t nat -A PREROUTING -p $protocol --dport "$h_port" -j DNAT --to-destination "${ip}:${c_port}"
 }
 
 function forward6() {
