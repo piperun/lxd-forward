@@ -14,6 +14,14 @@ container_name=$4
 container_port=$5
 host_port=$6
 
+echo "Require sudo password"
+read PASS
+
+#This can be done better but shell scripting is torture to learn
+ip6tables=$(echo $PASS | sudo -S ip6tables)
+iptables=$(echo $PASS | sudo -S iptables)
+
+
 function usage() {
   echo "Usage: $(basename ${0})
   list
@@ -52,7 +60,7 @@ function list() {
     if [ "$c_ip6" = "" ]; then
 	    c_ip6="none"
 	fi
-    forwarded_ports=$(iptables -t nat --line-numbers -L --numeric | grep $c_ip)
+    forwarded_ports=$($iptables -t nat --line-numbers -L --numeric | grep $c_ip)
     forwarded_ports6=$(ip6tables -t nat --line-numbers -L --numeric | grep $c_ip6)
     echo "$forwarded_ports" | while IFS= read -r ports_line; do
       rule_no=$(echo $ports_line | awk '{print $1}')
@@ -102,8 +110,7 @@ function forward() {
   test -n "$c_port" || error "Container port not specified"
   test -n "$h_port" || h_port=$c_port
 
-  # only sudo when needing to use iptables so we won't access sudo (root) lxd by "sudo ./lxd-forward"
-  sudo iptables -t nat -A PREROUTING -p $protocol --dport "$h_port" -j DNAT --to-destination "${ip}:${c_port}"
+  $iptables -t nat -A PREROUTING -p $protocol --dport "$h_port" -j DNAT --to-destination "${ip}:${c_port}"
 }
 
 function forward6() {
