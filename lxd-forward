@@ -18,8 +18,8 @@ echo "Require sudo password"
 read PASS
 
 #This can be done better but shell scripting is torture to learn
-ip6tables=$(echo $PASS | sudo -S ip6tables)
-iptables=$(echo $PASS | sudo -S iptables)
+#ip6tables=$(echo $PASS | sudo -S ip6tables)
+#iptables=$(echo $PASS | sudo -S iptables)
 
 
 function usage() {
@@ -60,8 +60,8 @@ function list() {
     if [ "$c_ip6" = "" ]; then
 	    c_ip6="none"
 	fi
-    forwarded_ports=$($iptables -t nat --line-numbers -L --numeric | grep $c_ip)
-    forwarded_ports6=$(ip6tables -t nat --line-numbers -L --numeric | grep $c_ip6)
+    forwarded_ports=$(echo $PASS | sudo -S iptables -t nat --line-numbers -L --numeric | grep $c_ip)
+    forwarded_ports6=$(echo $PASS | sudo -S ip6tables -t nat --line-numbers -L --numeric | grep $c_ip6)
     echo "$forwarded_ports" | while IFS= read -r ports_line; do
       rule_no=$(echo $ports_line | awk '{print $1}')
       protocol=$(echo $ports_line | awk '{print $3}')
@@ -110,7 +110,7 @@ function forward() {
   test -n "$c_port" || error "Container port not specified"
   test -n "$h_port" || h_port=$c_port
 
-  $iptables -t nat -A PREROUTING -p $protocol --dport "$h_port" -j DNAT --to-destination "${ip}:${c_port}"
+  $(echo $PASS | sudo -S iptables -t nat -A PREROUTING -p $protocol --dport "$h_port" -j DNAT --to-destination "${ip}:${c_port}")
 }
 
 function forward6() {
@@ -124,7 +124,7 @@ function forward6() {
   test -n "$c_port" || error "Container port not specified"
   test -n "$h_port" || h_port=$c_port
 
-  ip6tables -t nat -A PREROUTING -p $protocol --dport "$h_port" -j DNAT --to-destination "[${ip6}]":"${c_port}"
+  $(echo $PASS | sudo -S ip6tables -t nat -A PREROUTING -p $protocol --dport "$h_port" -j DNAT --to-destination "[${ip6}]":"${c_port}")
 }
 
 function del() {
@@ -141,13 +141,13 @@ esac
 function delete() {
   rule_no=$1
   test -n "$rule_no" || error "Must specify rule no."
-  iptables -t nat -D PREROUTING "${rule_no}"
+  $(echo $PASS | sudo -S iptables -t nat -D PREROUTING "${rule_no}")
 }
 
 function delete6() {
   rule_no=$1
   test -n "$rule_no" || error "Must specify rule no."
-  ip6tables -t nat -D PREROUTING "${rule_no}"
+  $(echo $PASS | sudo -S ip6tables -t nat -D PREROUTING "${rule_no}")
 }
 
 case "$cmd" in
